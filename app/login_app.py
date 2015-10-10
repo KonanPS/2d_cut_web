@@ -1,19 +1,24 @@
-def login_app(env, start_response):
+def application(env, start_response):
 
-	import re
+    import re
+    import check_creds, index
 
-    ulrs = [(r'^$', index),
-            (r'^login\?.*', check_creds)
+    urls = [(r'^$', index.index),
+            (r'^login\?.*', check_creds.check_creds)
             ]
 
-    path = env.get('PATH_INFO', '').lstrip()
-
+    path = env.get('PATH_INFO', '').lstrip('/')
+    print path
     for regex, callback in urls:
 
         match = re.search(regex, path)
 
         if match is not None:
             return callback(env, start_response)
+
+    start_response('200 OK', [('Content-Type','text/html')])  
+
+    return [b'Something wrong!']
 
     # if env.get('PATH_INFO','') == '/login':
     # 	qs_dict = parse_qs(env.get('QUERY_STRING',''))
