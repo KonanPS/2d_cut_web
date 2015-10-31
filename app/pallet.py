@@ -34,9 +34,13 @@ def count(env, start_response):
 
         start_response('200 OK', [('Content-Type','text/html; charset=utf-8')])
 
+
+        data = data_str[0].split()
+        PALLET_LEN = int(data[0]) 
+
         s = ''
         for cut in cuts:
-            s += str(cut) + '<br>'
+            s += str(cut) + ' Остаток: ' + str(PALLET_LEN - sum(cut)) + '<br>'
 
         return[res.substitute(cuts=s, total_residue=total_residue)]
 
