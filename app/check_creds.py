@@ -38,15 +38,22 @@ def check_creds(env, start_response):
 
     if sel_res and sel_res[1] == qs_dict['password'][0]:
 
+        #session. generates and stores cookies
+        import time
+        s_token = qs_dict['username'][0] + '_' + str(time.time())
+        c.execute('''UPDATE creds SET session_token=? WHERE username=? ''', (s_token, qs_dict['username'][0]))
+        conn.commit()
         conn.close()
+        #session.
 
-        template_file = open('../templates/success_login.html', 'r')
+        template_file = open('../templates/pallet_spec.html', 'r')
         tmp = template_file.readlines()
         res = Template(''.join(tmp))
         template_file.close()
 
-        start_response('200 OK', [('Content-Type','text/html')])
-        return [res.substitute(username=qs_dict['username'][0])]
+        cook_val = 'sessionToken=' + s_token
+        start_response('200 OK', [('Content-Type','text/html'),('Set-Cookie',cook_val)])
+        return [res.substitute(username=qs_dict['username'][0], some_text='Введите данные для рассчет', button_name='Раcсчитать')]
         
     else:
         conn.close()
