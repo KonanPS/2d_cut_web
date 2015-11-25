@@ -23,7 +23,6 @@ def cut_maps (elem_dict, PALLET_LEN):
 
 	while len(max(acc, key=len)) < max_map_length:
 		
-		# acc = set()
 		new_combis = set()
 
 		for combi in combis_in_iteration:
@@ -36,14 +35,8 @@ def cut_maps (elem_dict, PALLET_LEN):
 					acc.add(temp) # set won't have same items
 					new_combis.add(temp)
 
-					# if temp not in result: # filter the same combis
-					# 	result.append(temp)
 		combis_in_iteration = new_combis.copy()
 
-		# print 'combis_in_iteration: ', len(combis_in_iteration)
-		# # result = list(acc)
-		# print 'acc len: ', len(acc)
-	
 	result = list(acc)			
 	return result
 
@@ -85,35 +78,11 @@ def apply_map(elem_dict, cut_map):
 
 	return elem_dict
 
-
-def find_maps_for_elem_set(elem_dict, maps_with_residue):
-	"""
-	finds number of maps with minimun sum residue 
-	tries to apply map with minimun residue each time until all elements are used
-
-	"""
-	maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
-	elem_dict_copy = elem_dict.copy()
-
-	result = []
-
-	while sum(elem_dict_copy.values()) > 0:
-
-		for cut_map in maps_sorted: 					# tries map from sored
-
-			if can_apply_map(elem_dict_copy, cut_map[0]):
-				apply_map(elem_dict_copy, cut_map[0]) 		# applies map to dict
-				result.append(cut_map) 					# add map to final result
-				break									# if found one need to start seach from the begining too apply the same map again
-
-	return result
-
 def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue):
 	"""
 	starting from each map combines it with others finds combi with min sum residue
 	"""
 	import copy
-	# min_residue = float('inf')
 
 	maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
 
@@ -138,32 +107,20 @@ def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue):
 
 		while sum(result[0].values()):
 
-			#track process
-			it += 1 
-			if not (it % 1000):
-				print "result: ", result
-				print it
-			#track process
-
 			min_iter_residue = float('inf')
 
 			for m in maps_with_residue:
 			
 				if can_apply_map(result[0], m[0]):
 					temp = copy.deepcopy(result)
-					# print 'temp: ', temp
 					temp_combi_residue = result_residue	
 					temp.append(m)
 					apply_map(temp[0],m[0])
-					# print 'temp after apply: ', temp
 					temp_combi_residue += m[1]
-					# print "temp", temp
-					# print "temp_residue", temp_combi_residue
 
 				if temp_combi_residue < min_iter_residue:
 					min_iter_residue = temp_combi_residue
 					temp_min_result = copy.deepcopy(temp) 
-					# print temp_min_result
 
 			result = copy.deepcopy(temp_min_result)
 			result_residue = min_iter_residue
