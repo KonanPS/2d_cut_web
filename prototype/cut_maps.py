@@ -37,7 +37,8 @@ def cut_maps (elem_dict, PALLET_LEN):
 
 		combis_in_iteration = new_combis.copy()
 
-	result = list(acc)			
+	result = list(acc)
+	print 'maps done'			
 	return result
 
 def cut_maps_residues(maps, PALLET_LEN):
@@ -78,12 +79,8 @@ def apply_map(elem_dict, cut_map):
 
 	return elem_dict
 
-def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue):
-	"""
-	starting from each map combines it with others finds combi with min sum residue
-	"""
-	import copy
-
+def prepare_data_for_find(elem_dict, maps_with_residue):
+	""" """
 	maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
 
 	min_residue_list = [maps_sorted[0]]
@@ -95,41 +92,68 @@ def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue):
 		min_residue_list.append(maps_sorted[i])
 		cur_map_residue = maps_sorted[i][1] 
 
+	# print 'List with min residue maps done'
+	# print min_residue_list
+	# l = len(min_residue_list)
+
+	return min_residue_list
+
+def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue, start_map):
+	"""
+	starting from each map combines it with others finds combi with min sum residue
+	"""
+	import copy, os
+
 	residue = float('inf')
+
+	result = [elem_dict.copy(), start_map]
+	apply_map(result[0],result[1][0])
+	result_residue = result[1][1]
+	temp_combi_residue = result_residue
+	temp = copy.deepcopy(result)
+
+	while sum(result[0].values()):
+
+		min_iter_residue = float('inf')
+
+		for m in maps_with_residue:
+		
+			if can_apply_map(result[0], m[0]):
+				temp = copy.deepcopy(result)
+				temp_combi_residue = result_residue	
+				temp.append(m)
+				apply_map(temp[0],m[0])
+				temp_combi_residue += m[1]
+
+			if temp_combi_residue < min_iter_residue:
+				min_iter_residue = temp_combi_residue
+				temp_min_result = copy.deepcopy(temp) 
+
+		result = copy.deepcopy(temp_min_result)
+		result_residue = min_iter_residue
+
+	if result_residue <= residue:
+		residue = result_residue
+		best = copy.deepcopy(result)
+
+	# print 'Checked %s of %s' % (_it, l)
+	# print residue
+
+	return best, residue
+
+def try_multiprocess(elem_dict, maps_with_residue):
+	""" """
+	from multiprocessing import Process
+
+	min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue) 
 
 	for m in min_residue_list:
 
-		result = [elem_dict.copy(), m]
-		apply_map(result[0],result[1][0])
-		result_residue = result[1][1]
+		p = Process(target=find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m))
 
-		it = 0
+		if __name__ == '__main__':
 
-		while sum(result[0].values()):
-
-			min_iter_residue = float('inf')
-
-			for m in maps_with_residue:
-			
-				if can_apply_map(result[0], m[0]):
-					temp = copy.deepcopy(result)
-					temp_combi_residue = result_residue	
-					temp.append(m)
-					apply_map(temp[0],m[0])
-					temp_combi_residue += m[1]
-
-				if temp_combi_residue < min_iter_residue:
-					min_iter_residue = temp_combi_residue
-					temp_min_result = copy.deepcopy(temp) 
-
-			result = copy.deepcopy(temp_min_result)
-			result_residue = min_iter_residue
-
-		if result_residue <= residue:
-			residue = result_residue
-			best = copy.deepcopy(result)
-
-	return best, residue
+		
 
 def main(elem_dict, PALLET_LEN):
 	"""
@@ -137,13 +161,19 @@ def main(elem_dict, PALLET_LEN):
 	"""
 	import time
 
+	global global_result
+
+	global_result = []
+
 	start_time = time.time()
 
 	all_possible_maps = cut_maps(elem_dict, PALLET_LEN)
 
 	all_possible_maps_with_residues = cut_maps_residues(all_possible_maps, PALLET_LEN)
 
-	combi_with_min_residue, combi_residue = find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues)
+	# combi_with_min_residue, combi_residue = find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues)
+
+	try_multiprocess(elem_dict, all_possible_maps_with_residues)
 
 	finish_time = time.time()
 
@@ -181,7 +211,7 @@ if __name__ == '__main__':
 	
 
 
-	result, combi_residue = main(test_paper, PAPER_LEN) # [{}, ((map1), residue1), ((map2), residue2), ...]
+	result, combi_residue = main(test_dict, PALLET_LEN) # [{}, ((map1), residue1), ((map2), residue2), ...]
 
 	result_dict = {}
 	for m in result[1:]:
