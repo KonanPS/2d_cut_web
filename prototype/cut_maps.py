@@ -117,45 +117,62 @@ def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue):
 
 	maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
 
-	result = [elem_dict.copy(), maps_sorted[0]]
-	apply_map(result[0],result[1][0])
-	result_residue = result[1][1]
+	min_residue_list = [maps_sorted[0]]
 
-	it = 0
+	cur_map_residue = maps_sorted[0][1]
+	i = 0
+	while cur_map_residue == maps_sorted[0][1]:
+		i += 1
+		min_residue_list.append(maps_sorted[i])
+		cur_map_residue = maps_sorted[i][1] 
 
-	while sum(result[0].values()):
+	residue = float('inf')
 
-		#track process
-		it += 1 
-		if not (it % 1000):
-			print "result: ", result
-			print it
-		#track process
+	for m in min_residue_list:
 
-		min_iter_residue = float('inf')
+		result = [elem_dict.copy(), m]
+		apply_map(result[0],result[1][0])
+		result_residue = result[1][1]
 
-		for m in maps_with_residue:
-		
-			if can_apply_map(result[0], m[0]):
-				temp = copy.deepcopy(result)
-				# print 'temp: ', temp
-				temp_combi_residue = result_residue	
-				temp.append(m)
-				apply_map(temp[0],m[0])
-				# print 'temp after apply: ', temp
-				temp_combi_residue += m[1]
-				# print "temp", temp
-				# print "temp_residue", temp_combi_residue
+		it = 0
 
-			if temp_combi_residue < min_iter_residue:
-				min_iter_residue = temp_combi_residue
-				temp_min_result = copy.deepcopy(temp) 
-				# print temp_min_result
+		while sum(result[0].values()):
 
-		result = copy.deepcopy(temp_min_result)
-		result_residue = min_iter_residue
+			#track process
+			it += 1 
+			if not (it % 1000):
+				print "result: ", result
+				print it
+			#track process
 
-	return result, min_iter_residue
+			min_iter_residue = float('inf')
+
+			for m in maps_with_residue:
+			
+				if can_apply_map(result[0], m[0]):
+					temp = copy.deepcopy(result)
+					# print 'temp: ', temp
+					temp_combi_residue = result_residue	
+					temp.append(m)
+					apply_map(temp[0],m[0])
+					# print 'temp after apply: ', temp
+					temp_combi_residue += m[1]
+					# print "temp", temp
+					# print "temp_residue", temp_combi_residue
+
+				if temp_combi_residue < min_iter_residue:
+					min_iter_residue = temp_combi_residue
+					temp_min_result = copy.deepcopy(temp) 
+					# print temp_min_result
+
+			result = copy.deepcopy(temp_min_result)
+			result_residue = min_iter_residue
+
+		if result_residue <= residue:
+			residue = result_residue
+			best = copy.deepcopy(result)
+
+	return best, residue
 
 def main(elem_dict, PALLET_LEN):
 	"""
