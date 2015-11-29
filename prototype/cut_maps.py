@@ -38,6 +38,7 @@ def cut_maps (elem_dict, PALLET_LEN):
 		combis_in_iteration = new_combis.copy()
 
 	result = list(acc)
+	print result[6]
 	print 'maps done'			
 	return result
 
@@ -46,12 +47,15 @@ def cut_maps_residues(maps, PALLET_LEN):
 	takes cut maps and pallet len to finds residue for each map
 	returns list of tuplse (map, residue) 
 	"""
+	import pickle
 
 	result = []
 
 	for cut_map in maps:
 		residue = PALLET_LEN - sum(cut_map)
 		result. append((cut_map, residue))
+
+	# pickle.dump(result, open('cut_maps_with_residues.pick', 'wb'))
 
 	return result
 
@@ -98,11 +102,20 @@ def prepare_data_for_find(elem_dict, maps_with_residue):
 
 	return min_residue_list
 
-def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue, start_map):
+def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues, start_map, filename):
 	"""
 	starting from each map combines it with others finds combi with min sum residue
 	"""
-	import copy, os
+	import copy, os, time
+	import pickle
+
+	print 'Strats pid %s' % (os.getpid(),)
+	# print 'Strats thread %s' % (thread.get_ident(),)
+	n = time.time()
+
+	print start_map
+	print
+	print elem_dict
 
 	residue = float('inf')
 
@@ -110,50 +123,95 @@ def find_maps_combinations_with_min_residue(elem_dict, maps_with_residue, start_
 	apply_map(result[0],result[1][0])
 	result_residue = result[1][1]
 	temp_combi_residue = result_residue
+
+	# ds = time.time()
+	# print 'deepcopy start'
 	temp = copy.deepcopy(result)
+	temp_min_result = copy.deepcopy(result)
+	# de = time.time()
+	# print 'deepcopy ends in ', de - ds
+
+	# file_open_s = time.time()
+	# print 'pickle read start'
+	maps_with_residue = all_possible_maps_with_residues
+	# file_open_e = time.time()
+	# print 'pickle read finish in', file_open_e - file_open_s
 
 	while sum(result[0].values()):
 
 		min_iter_residue = float('inf')
 
-		for m in maps_with_residue:
-		
+		# print 'len maps_with_residue: ', len(maps_with_residue)
+
+		# fs = time.time()
+		# print 'FOR start'
+		for m in maps_with_residue: # finds min residue for current tree level
+			
 			if can_apply_map(result[0], m[0]):
-				temp = copy.deepcopy(result)
+				# temp = copy.deepcopy(result)
 				temp_combi_residue = result_residue	
-				temp.append(m)
-				apply_map(temp[0],m[0])
+				# temp.append(m)
+				# apply_map(temp[0],m[0])
 				temp_combi_residue += m[1]
 
-			if temp_combi_residue < min_iter_residue:
-				min_iter_residue = temp_combi_residue
-				temp_min_result = copy.deepcopy(temp) 
+				if temp_combi_residue <= min_iter_residue:
+					min_iter_residue = temp_combi_residue
+					temp_min_result = copy.deepcopy(result)
+					temp_min_result.append(m)
+					apply_map(temp_min_result[0],m[0])
+				# temp_min_result = copy.deepcopy(temp) 
+		# fe = time.time()
+		# print 'FOR ends in ', fe - fs
 
-		result = copy.deepcopy(temp_min_result)
+		result = copy.deepcopy(temp_min_result) # one step down the tree in min residue direction
 		result_residue = min_iter_residue
 
-	if result_residue <= residue:
-		residue = result_residue
-		best = copy.deepcopy(result)
+		print sum(result[0].values())
+
+		# if result_residue < residue:
+		# 	residue = result_residue
+		# 	best = copy.deepcopy(result)
 
 	# print 'Checked %s of %s' % (_it, l)
 	# print residue
+	e = time.time()
+	pickle.dump(result, open(filename, 'wb'))
+	# print 'Finish thread %s' % (thread.get_ident(),)
+	print 'Process %s finished in %s seconds' % (os.getpid(), e - n,)
+	return None
 
-	return best, residue
-
-def try_multiprocess(elem_dict, maps_with_residue):
+def try_multiprocess(elem_dict, all_possible_maps_with_residues):
 	""" """
 	from multiprocessing import Process
+	import pickle
+
+	maps_with_residue = all_possible_maps_with_residues
 
 	min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue) 
 
+	filename = 0
+
 	for m in min_residue_list:
+		if can_apply_map(elem_dict, m[0]):
 
-		p = Process(target=find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m))
-
-		if __name__ == '__main__':
-
+			filename += 1
+			if __name__ == '__main__':
+				p = Process(target=find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m, str(filename)))
+				p.start()
+				p.join()
 		
+def try_multithread(elem_dict, maps_with_residue):
+	""" """
+	import threading
+
+	min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue) 
+
+	filename = 0
+
+	for m in min_residue_list:
+		filename += 1
+		t = threading.Thread(target=find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m, str(filename)))
+		t.start()
 
 def main(elem_dict, PALLET_LEN):
 	"""
@@ -179,7 +237,8 @@ def main(elem_dict, PALLET_LEN):
 
 	print 'Processig time: ', finish_time - start_time
 
-	return combi_with_min_residue, combi_residue
+	# return combi_with_min_residue, combi_residue
+	return None
 
 if __name__ == '__main__':
 
@@ -202,25 +261,25 @@ if __name__ == '__main__':
 								(1710,2000,1880): 10,
 								(1710,1710,2150): 2 
 								}
-	residue_percent = 0.401 # %
+# residue_percent = 0.401 # %
 
-	residue = 0
+# residue = 0
 
-	for m in paper_one_of_the_answers.keys():
-		residue += (PAPER_LEN - sum(m)) * paper_one_of_the_answers[m]
-	
+# for m in paper_one_of_the_answers.keys():
+# 	residue += (PAPER_LEN - sum(m)) * paper_one_of_the_answers[m]
 
 
-	result, combi_residue = main(test_dict, PALLET_LEN) # [{}, ((map1), residue1), ((map2), residue2), ...]
 
-	result_dict = {}
-	for m in result[1:]:
-		if m[0] in result_dict:
-			result_dict[m[0]] += 1
-		else:
-			result_dict[m[0]] = 1
+	result = main(test_paper, PAPER_LEN) # [{}, ((map1), residue1), ((map2), residue2), ...]
 
-	print result_dict
-	print 'Total residue: ', combi_residue
-	print 'Residue percent: ', float(combi_residue) * 100 / (PAPER_LEN * sum(result_dict.values()))
-	print 'Original residue percent: ', float(residue) * 100 / (sum(paper_one_of_the_answers.values() * PAPER_LEN))
+# result_dict = {}
+# for m in result[1:]:
+# 	if m[0] in result_dict:
+# 		result_dict[m[0]] += 1
+# 	else:
+# 		result_dict[m[0]] = 1
+
+# print result_dict
+# print 'Total residue: ', combi_residue
+# print 'Residue percent: ', float(combi_residue) * 100 / (PAPER_LEN * sum(result_dict.values()))
+# print 'Original residue percent: ', float(residue) * 100 / (sum(paper_one_of_the_answers.values() * PAPER_LEN))
