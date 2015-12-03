@@ -20,7 +20,10 @@ def get_data_from_file(filename, separator):
 		temp = line.split(separator)
 		length = int(temp[0])
 		num = int(temp[1])
-		pieces_dict[length] = num
+		if pieces_dict.get(length):
+			pieces_dict[length] += num
+		else:
+			pieces_dict[length] = num
 
 		#pieces list is list of max int number of element on one PALLET
 		for _ind in range(int(PALLET_LEN / length)):
@@ -227,7 +230,10 @@ def main(**kwargs):
 			temp = line.split(';')
 			length = int(temp[0])
 			num = int(temp[1])
-			pieces_dict[length] = num
+			if pieces_dict.get(length):
+				pieces_dict[length] += num
+			else:
+				pieces_dict[length] = num
 
 			#pieces list is list of max int number of element on one PALLET
 			# for _ind in range(int(PALLET_LEN / length)):
