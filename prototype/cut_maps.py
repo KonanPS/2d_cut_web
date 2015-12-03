@@ -8,9 +8,6 @@ def cut_maps (elem_dict, PALLET_LEN):
     distinct_elements_list = elem_dict.keys()
 
     max_num_on_pallet = int( PALLET_LEN / (min(distinct_elements_list)) )
-    num_of_shortest_el = elem_dict[min(distinct_elements_list)]
-
-    max_map_length = min( (max_num_on_pallet, num_of_shortest_el) )
 
     result = []
 
@@ -21,7 +18,7 @@ def cut_maps (elem_dict, PALLET_LEN):
     combis_in_iteration = result[:]
     acc = set(result[:])
 
-    while len(max(acc, key=len)) < max_map_length:
+    while len(max(acc, key=len)) < max_num_on_pallet:
         
         new_combis = set()
 
