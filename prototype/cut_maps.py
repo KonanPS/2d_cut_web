@@ -4,7 +4,7 @@ def cut_maps (elem_dict, PALLET_LEN):
     limitation for number of elements on a pallet is PALLET_LEN
     this limit could be counted 
     """
-    # max number of elements on a pallet
+    
     distinct_elements_list = elem_dict.keys()
 
     max_num_on_pallet = int( PALLET_LEN / (min(distinct_elements_list)) )
@@ -28,9 +28,10 @@ def cut_maps (elem_dict, PALLET_LEN):
                 if sum(combi) + el <= PALLET_LEN: # check limit
                     temp = list(combi)
                     temp.append(el)
-                    temp = tuple(sorted(temp))
-                    acc.add(temp) # set won't have same items
-                    new_combis.add(temp)
+                    if can_apply_map(elem_dict,temp): # filter combis 
+                        temp = tuple(sorted(temp))
+                        acc.add(temp) # set won't have same items
+                        new_combis.add(temp)
 
         combis_in_iteration = new_combis.copy()
 
