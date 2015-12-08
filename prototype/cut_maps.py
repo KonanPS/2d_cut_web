@@ -149,10 +149,11 @@ def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_re
     while sum(result[0].values()):
 
         min_iter_residue = float('inf')
+        prev_best_residue = float('inf')
 
         for m in all_possible_maps_with_residues_sorted: # finds min residue for current tree level
 
-            if m[1] > min_iter_residue:
+            if m[1] > prev_best_residue:
                 break #list is sorted by residue. so, there no way that total will be less than current minimum
             
             if can_apply_map(result[0], m[0]):
@@ -164,6 +165,7 @@ def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_re
                     temp_min_result = copy.deepcopy(result)
                     temp_min_result.append(m)
                     apply_map(temp_min_result[0],m[0])
+                    prev_best_residue = m[1]
 
         result = copy.deepcopy(temp_min_result) # one step down the tree in min residue direction
         result_residue = min_iter_residue
