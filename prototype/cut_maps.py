@@ -4,10 +4,17 @@ def cut_maps (elem_dict, PALLET_LEN):
     limitation for number of elements on a pallet is PALLET_LEN
     this limit could be counted 
     """
-    
+    import time
+
+    s = time.time()
     distinct_elements_list = elem_dict.keys()
+    min_el = min(distinct_elements_list)
 
     max_num_on_pallet = int( PALLET_LEN / (min(distinct_elements_list)) )
+
+    min_map_len = min( (max_num_on_pallet, elem_dict[min_el]) )
+
+    print 'min_map_len: ', min_map_len
 
     result = []
 
@@ -18,7 +25,7 @@ def cut_maps (elem_dict, PALLET_LEN):
     combis_in_iteration = result[:]
     acc = set(result[:])
 
-    while len(max(acc, key=len)) < max_num_on_pallet:
+    while len(max(acc, key=len)) < min_map_len:
         
         new_combis = set()
 
@@ -36,8 +43,10 @@ def cut_maps (elem_dict, PALLET_LEN):
         combis_in_iteration = new_combis.copy()
 
     result = list(acc)
-    print result[6]
-    print 'maps done'           
+    e = time.time()
+    print 'maps done in %0.2f' % (e - s,)
+    print 'number of maps: ', len(result)
+
     return result
 
 def cut_maps_residues(maps, PALLET_LEN):
@@ -53,22 +62,24 @@ def cut_maps_residues(maps, PALLET_LEN):
         residue = PALLET_LEN - sum(cut_map)
         result. append((cut_map, residue))
 
-    # pickle.dump(result, open('cut_maps_with_residues.pick', 'wb'))
-
     return result
 
 def can_apply_map(elem_dict, cut_map):
     """
     checks if map could be applied for current elem_dict (elements and its number)
     """
+    # import copy
     elem_dict_copy = elem_dict.copy()
 
     for elem in cut_map:
         elem_dict_copy[elem] -= 1
 
-    for num in elem_dict_copy.values():
-        if num < 0:
-            return False    
+    if min( elem_dict_copy.values() ) < 0:
+        return False
+
+    # for num in elem_dict_copy.values():
+    #     if num < 0:
+    #         return False    
 
     return True
 
@@ -81,18 +92,33 @@ def apply_map(elem_dict, cut_map):
 
     return elem_dict
 
-def prepare_data_for_find(elem_dict, maps_with_residue):
+def how_many_times_can_apply(elem_dict, cut_map):
+    """ count how many times map can be applied"""
+    import copy
+
+    temp_elem_dict = copy.deepcopy(elem_dict)
+    
+    n = 0
+
+    while can_apply_map(temp_elem_dict, cut_map):
+        n += 1
+        apply_map(temp_elem_dict. cut_map)
+
+    return n
+
+
+def prepare_data_for_find(elem_dict, maps_with_residue_sorted):
     """ """
-    maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
+    # maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
 
-    min_residue_list = [maps_sorted[0]]
+    min_residue_list = [maps_with_residue_sorted[0]]
 
-    cur_map_residue = maps_sorted[0][1]
+    cur_map_residue = maps_with_residue_sorted[0][1]
     i = 0
-    while cur_map_residue == maps_sorted[0][1]:
+    while cur_map_residue == maps_with_residue_sorted[0][1]:
         i += 1
-        min_residue_list.append(maps_sorted[i])
-        cur_map_residue = maps_sorted[i][1] 
+        min_residue_list.append(maps_with_residue_sorted[i])
+        cur_map_residue = maps_with_residue_sorted[i][1] 
 
     # print 'List with min residue maps done'
     # print min_residue_list
@@ -100,7 +126,7 @@ def prepare_data_for_find(elem_dict, maps_with_residue):
 
     return min_residue_list
 
-def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues, start_map, filename):
+def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues_sorted, start_map, filename):
     """
     starting from each map combines it with others finds combi with min sum residue
     """
@@ -108,12 +134,7 @@ def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_re
     import pickle
 
     print 'Strats pid %s' % (os.getpid(),)
-    # print 'Strats thread %s' % (thread.get_ident(),)
     n = time.time()
-
-    # print start_map
-    # print
-    # print elem_dict
 
     residue = float('inf')
 
@@ -122,34 +143,20 @@ def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_re
     result_residue = result[1][1]
     temp_combi_residue = result_residue
 
-    # ds = time.time()
-    # print 'deepcopy start'
     temp = copy.deepcopy(result)
     temp_min_result = copy.deepcopy(result)
-    # de = time.time()
-    # print 'deepcopy ends in ', de - ds
-
-    # file_open_s = time.time()
-    # print 'pickle read start'
-    maps_with_residue = all_possible_maps_with_residues
-    # file_open_e = time.time()
-    # print 'pickle read finish in', file_open_e - file_open_s
 
     while sum(result[0].values()):
 
         min_iter_residue = float('inf')
 
-        # print 'len maps_with_residue: ', len(maps_with_residue)
+        for m in all_possible_maps_with_residues_sorted: # finds min residue for current tree level
 
-        # fs = time.time()
-        # print 'FOR start'
-        for m in maps_with_residue: # finds min residue for current tree level
+            if m[1] > min_iter_residue:
+                break #list is sorted by residue. so, there no way that total will be less than current minimum
             
             if can_apply_map(result[0], m[0]):
-                # temp = copy.deepcopy(result)
                 temp_combi_residue = result_residue 
-                # temp.append(m)
-                # apply_map(temp[0],m[0])
                 temp_combi_residue += m[1]
 
                 if temp_combi_residue <= min_iter_residue:
@@ -157,30 +164,17 @@ def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_re
                     temp_min_result = copy.deepcopy(result)
                     temp_min_result.append(m)
                     apply_map(temp_min_result[0],m[0])
-                # temp_min_result = copy.deepcopy(temp) 
-        # fe = time.time()
-        # print 'FOR ends in ', fe - fs
 
         result = copy.deepcopy(temp_min_result) # one step down the tree in min residue direction
         result_residue = min_iter_residue
 
-        # print sum(result[0].values())
-
-        # if result_residue < residue:
-        #   residue = result_residue
-        #   best = copy.deepcopy(result)
-
-    # print 'Checked %s of %s' % (_it, l)
-    # print residue
     e = time.time()
-    pickle.dump(result, open(filename, 'wb'))
-    # print 'Finish thread %s' % (thread.get_ident(),)
-    print 'Process %s finished in %s seconds' % (os.getpid(), e - n,)
+    print 'Process %s finished in %0.2f seconds' % (os.getpid(), e - n,)
     return result
 
 
 
-def try_multiprocess(elem_dict, all_possible_maps_with_residues):
+def try_multiprocess(elem_dict, all_possible_maps_with_residues_sorted):
     """ """
     from multiprocessing import Process, Manager, Pool
     import pickle
@@ -192,25 +186,21 @@ def try_multiprocess(elem_dict, all_possible_maps_with_residues):
         # result_list is modified only by the main process, not the pool workers.
         result_list.append(result)
 
-    # manager = Manager()
-
-    pool = Pool(processes=2)
+    pool = Pool()
     
-    maps_with_residue = all_possible_maps_with_residues
+    maps_with_residue_sorted = all_possible_maps_with_residues_sorted
 
-    min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue) 
-
-    # shared_maps_with_residue = manager.list(maps_with_residue)
+    min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue_sorted) 
 
     filename = 0
     # result_list = []
 
-    for m in min_residue_list:
+    for m in min_residue_list: #there is no sence to start with not min residue map
 
         if can_apply_map(elem_dict, m[0]):
 
             filename += 1
-            result = pool.apply_async(find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m, str(filename)), callback=log_result)
+            result = pool.apply_async(find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue_sorted, m, str(filename)), callback=log_result)
 
             # r = result.get()
 
@@ -226,19 +216,6 @@ def try_multiprocess(elem_dict, all_possible_maps_with_residues):
 
     return result_list
         
-# def try_multithread(elem_dict, maps_with_residue):
-#     """ """
-#     import threading
-
-#     min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue) 
-
-#     filename = 0
-
-#     for m in min_residue_list:
-#         filename += 1
-#         t = threading.Thread(target=find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m, str(filename)))
-#         t.start()
-
 def main(elem_dict, PALLET_LEN):
     """
     combine all func together
@@ -255,9 +232,11 @@ def main(elem_dict, PALLET_LEN):
 
     all_possible_maps_with_residues = cut_maps_residues(all_possible_maps, PALLET_LEN)
 
+    all_possible_maps_with_residues_sorted = sorted(all_possible_maps_with_residues, key=lambda (x): x[1])
+
     # combi_with_min_residue, combi_residue = find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues)
 
-    best_candidates = try_multiprocess(elem_dict, all_possible_maps_with_residues)
+    best_candidates = try_multiprocess(elem_dict, all_possible_maps_with_residues_sorted)
 
     min_residue = float('inf')
     for candidate in best_candidates:
@@ -276,7 +255,7 @@ def main(elem_dict, PALLET_LEN):
 
     finish_time = time.time()
 
-    print 'Processig time: ', finish_time - start_time
+    print 'Processig time: %0.2f' % (finish_time - start_time, )
 
     # return combi_with_min_residue, combi_residue
     return None
