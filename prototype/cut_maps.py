@@ -68,7 +68,6 @@ def can_apply_map(elem_dict, cut_map):
     """
     checks if map could be applied for current elem_dict (elements and its number)
     """
-    # import copy
     elem_dict_copy = elem_dict.copy()
 
     for elem in cut_map:
@@ -76,10 +75,6 @@ def can_apply_map(elem_dict, cut_map):
 
     if min( elem_dict_copy.values() ) < 0:
         return False
-
-    # for num in elem_dict_copy.values():
-    #     if num < 0:
-    #         return False    
 
     return True
 
@@ -94,9 +89,8 @@ def apply_map(elem_dict, cut_map):
 
 def how_many_times_can_apply(elem_dict, cut_map):
     """ count how many times map can be applied"""
-    import copy
 
-    temp_elem_dict = copy.deepcopy(elem_dict)
+    temp_elem_dict = elem_dict.copy()
     
     n = 0
 
@@ -109,8 +103,6 @@ def how_many_times_can_apply(elem_dict, cut_map):
 
 def prepare_data_for_find(elem_dict, maps_with_residue_sorted):
     """ """
-    # maps_sorted = sorted(maps_with_residue, key=lambda x: x[1]) # sorted by residue amount
-
     min_residue_list = [maps_with_residue_sorted[0]]
 
     cur_map_residue = maps_with_residue_sorted[0][1]
@@ -119,10 +111,6 @@ def prepare_data_for_find(elem_dict, maps_with_residue_sorted):
         i += 1
         min_residue_list.append(maps_with_residue_sorted[i])
         cur_map_residue = maps_with_residue_sorted[i][1] 
-
-    # print 'List with min residue maps done'
-    # print min_residue_list
-    # l = len(min_residue_list)
 
     return min_residue_list
 
@@ -159,7 +147,7 @@ def find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_re
             if can_apply_map(result[0], m[0]):
                 temp_combi_residue = result_residue 
                 temp_combi_residue += m[1]
-
+                                                            #greedy algorithm
                 if temp_combi_residue <= min_iter_residue:
                     min_iter_residue = temp_combi_residue
                     temp_min_result = copy.deepcopy(result)
@@ -195,7 +183,6 @@ def try_multiprocess(elem_dict, all_possible_maps_with_residues_sorted):
     min_residue_list = prepare_data_for_find(elem_dict, maps_with_residue_sorted) 
 
     filename = 0
-    # result_list = []
 
     for m in min_residue_list: #there is no sence to start with not min residue map
 
@@ -204,17 +191,8 @@ def try_multiprocess(elem_dict, all_possible_maps_with_residues_sorted):
             filename += 1
             result = pool.apply_async(find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue_sorted, m, str(filename)), callback=log_result)
 
-            # r = result.get()
-
-            # result_list.append(r)
-
     pool.close()
     pool.join()
-
-            # if __name__ == '__main__':
-            #     p = Process(target=find_maps_combinations_with_min_residue, args=(elem_dict, maps_with_residue, m, str(filename)))
-            #     p.start()
-            #     p.join()
 
     return result_list
         
@@ -259,7 +237,6 @@ def main(elem_dict, PALLET_LEN):
 
     print 'Processig time: %0.2f' % (finish_time - start_time, )
 
-    # return combi_with_min_residue, combi_residue
     return None
 
 if __name__ == '__main__':
@@ -285,23 +262,14 @@ if __name__ == '__main__':
                                 }
 # residue_percent = 0.401 # %
 
-# residue = 0
+  residue += (PAPER_LEN - sum(m)) * paper_one_of_the_answers[m]
 
-# for m in paper_one_of_the_answers.keys():
-#   residue += (PAPER_LEN - sum(m)) * paper_one_of_the_answers[m]
+    my_example = {1: 10, 2: 5, 3: 7, 4: 9}
+    my_len = 7
+    my_answer {
+                (1,2,4) : 5,
+                (1,1,1,4): 1,
+                (3,4) : 3,
+                (1,3,3): 2}
 
-
-
-    result = main(test_dict, PALLET_LEN) # [{}, ((map1), residue1), ((map2), residue2), ...]
-
-# result_dict = {}
-# for m in result[1:]:
-#   if m[0] in result_dict:
-#       result_dict[m[0]] += 1
-#   else:
-#       result_dict[m[0]] = 1
-
-# print result_dict
-# print 'Total residue: ', combi_residue
-# print 'Residue percent: ', float(combi_residue) * 100 / (PAPER_LEN * sum(result_dict.values()))
-# print 'Original residue percent: ', float(residue) * 100 / (sum(paper_one_of_the_answers.values() * PAPER_LEN))
+    result = main(my_example, my_len) # [{}, ((map1), residue1), ((map2), residue2), ...]
