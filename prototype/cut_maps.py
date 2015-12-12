@@ -214,8 +214,6 @@ def main(elem_dict, PALLET_LEN):
 
     all_possible_maps_with_residues_sorted = sorted(all_possible_maps_with_residues, key=lambda (x): x[1])
 
-    # combi_with_min_residue, combi_residue = find_maps_combinations_with_min_residue(elem_dict, all_possible_maps_with_residues)
-
     best_candidates = try_multiprocess(elem_dict, all_possible_maps_with_residues_sorted)
 
     min_residue = float('inf')
